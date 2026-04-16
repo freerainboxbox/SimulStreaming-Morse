@@ -83,6 +83,10 @@ uv run simulstreaming-translate --src-lan en --tgt-lan imc \
     --model-dir /path/to/your-imc-llm ...
 ```
 
+## Fork Developer
+
+Michael Lin (malin2@buffalo.edu)
+
 # SimulStreaming
 
 SimulStreaming is a tool for simultaneous (aka streaming) processing of speech-to-text and LLM translation models. 
