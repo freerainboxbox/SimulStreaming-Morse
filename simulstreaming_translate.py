@@ -299,6 +299,7 @@ class SimulLLM:
 ### default prompts
 
 lan_to_name = {
+    "imc": "International Morse Code",
     "de": "German",
     "ja": "Japanese",
     "zh-tr": "Chinese Traditional",

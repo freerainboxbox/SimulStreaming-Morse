@@ -638,9 +638,11 @@ class DecodingTask:
                 self.tokenizer.translate,
                 self.tokenizer.sot,
                 self.tokenizer.sot_prev,
-                self.tokenizer.sot_lm,
             ]
         )
+        # imc reuses <|startoflm|> as its language marker, so only suppress it for other languages
+        if self.tokenizer.language != "imc":
+            suppress_tokens.append(self.tokenizer.sot_lm)
         if self.tokenizer.no_speech is not None:
             # no-speech probability is collected separately
             suppress_tokens.append(self.tokenizer.no_speech)

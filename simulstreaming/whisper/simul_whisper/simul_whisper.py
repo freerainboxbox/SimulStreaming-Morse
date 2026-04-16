@@ -103,10 +103,12 @@ class PaddedAlignAttWhisper:
                 self.tokenizer.translate,
                 self.tokenizer.sot,
                 self.tokenizer.sot_prev,
-                self.tokenizer.sot_lm,
-                # self.tokenizer.eot 
+                # self.tokenizer.eot
                 self.tokenizer.no_timestamps,  # added by DM
             ] + list(self.tokenizer.all_language_tokens)  # added by DM
+        # imc reuses <|startoflm|> as its language marker, so only suppress it for other languages
+        if self.cfg.language != "imc":
+            suppress_tokens.append(self.tokenizer.sot_lm)
         if self.tokenizer.no_speech is not None:
             suppress_tokens.append(self.tokenizer.no_speech)
         suppress_tokens =  tuple(sorted(set(suppress_tokens)))

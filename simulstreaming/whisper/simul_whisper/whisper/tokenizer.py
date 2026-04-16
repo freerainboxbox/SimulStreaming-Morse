@@ -108,6 +108,7 @@ LANGUAGES = {
     "jw": "javanese",
     "su": "sundanese",
     "yue": "cantonese",
+    "imc": "international morse code",
 }
 
 # language code lookup by name, with a few language aliases
@@ -125,6 +126,7 @@ TO_LANGUAGE_CODE = {
     "sinhalese": "si",
     "castilian": "es",
     "mandarin": "zh",
+    "international morse code": "imc",
 }
 
 
@@ -151,7 +153,10 @@ class Tokenizer:
         langs = tuple(LANGUAGES.keys())[: self.num_languages]
         sot_sequence = [sot]
         if self.language is not None:
-            sot_sequence.append(sot + 1 + langs.index(self.language))
+            if self.language == "imc":
+                sot_sequence.append(self.special_tokens["<|startoflm|>"])
+            else:
+                sot_sequence.append(sot + 1 + langs.index(self.language))
         if self.task is not None:
             task_token: int = transcribe if self.task == "transcribe" else translate
             sot_sequence.append(task_token)
@@ -217,6 +222,8 @@ class Tokenizer:
         return self.to_language_token(self.language)
 
     def to_language_token(self, language):
+        if language == "imc":
+            return self.special_tokens["<|startoflm|>"]
         if token := self.special_tokens.get(f"<|{language}|>", None):
             return token
 
@@ -226,13 +233,24 @@ class Tokenizer:
     def all_language_tokens(self) -> Tuple[int]:
         result = []
         for token, token_id in self.special_tokens.items():
-            if token.strip("<|>") in LANGUAGES:
+            lang = token.strip("<|>")
+            if lang in LANGUAGES and lang != "imc":
                 result.append(token_id)
+        # imc reuses <|startoflm|> rather than having its own <|imc|> token
+        if "imc" in LANGUAGES:
+            result.append(self.special_tokens["<|startoflm|>"])
         return tuple(result)[: self.num_languages]
 
     @cached_property
     def all_language_codes(self) -> Tuple[str]:
-        return tuple(self.decode([_l]).strip("<|>") for _l in self.all_language_tokens)
+        imc_token = self.special_tokens["<|startoflm|>"]
+        codes = []
+        for _l in self.all_language_tokens:
+            if _l == imc_token:
+                codes.append("imc")
+            else:
+                codes.append(self.decode([_l]).strip("<|>"))
+        return tuple(codes)
 
     @cached_property
     def sot_sequence_including_notimestamps(self) -> Tuple[int]:
