@@ -1,3 +1,88 @@
+# SimulStreaming-Morse
+
+This is a fork of [ufal/SimulStreaming](https://github.com/ufal/SimulStreaming) that enables the use of a new custom language tag, for models trained with <|startoflm|> as a language identification marker. This was designed for use in a project at the University at Buffalo, CSE 676 course, with custom Whisper models designed to transcribe and translate Morse Code, but can be adapted to other languages as well.
+
+## Installation
+
+Requires Python 3.14. Install [uv](https://docs.astral.sh/uv/) if you don't have it, then:
+
+```bash
+git clone https://github.com/your-org/SimulStreaming-Morse
+cd SimulStreaming-Morse
+uv sync
+```
+
+This creates a virtual environment, pins Python 3.14, and installs all dependencies. The four command-line entry points are then available via `uv run`:
+
+```
+uv run simulstreaming-whisper
+uv run simulstreaming-whisper-server
+uv run simulstreaming-translate
+uv run simulstreaming-translate-server
+```
+
+Or install into your active environment:
+
+```bash
+uv pip install .
+```
+
+## International Morse Code (`imc`) language tag
+
+This fork adds `imc` as a language code for models trained with `<|startoflm|>` as their language identification marker. To use it, pass `--lan imc` (or `--language imc`) to the Whisper component.
+
+### Transcription (speech → Morse text)
+
+```bash
+uv run simulstreaming-whisper audio.wav --lan imc --task transcribe \
+    --model_path /path/to/your-imc-model.pt --comp_unaware --vac
+```
+
+The `<|startoflm|>` token is automatically placed in the SOT sequence (`<|startoftranscript|> <|startoflm|> <|transcribe|> <|notimestamps|>`) and is no longer suppressed during decoding.
+
+### Translation (speech → translated text via cascade)
+
+**Step 1 — Whisper ASR into JSONL:**
+
+```bash
+uv run simulstreaming-whisper audio.wav --lan imc --task transcribe \
+    --model_path /path/to/your-imc-model.pt --comp_unaware --vac > imc_asr.jsonl
+```
+
+**Step 2 — LLM translation of the ASR output:**
+
+```bash
+uv run simulstreaming-translate --src-lan imc --tgt-lan en \
+    --model-dir ct2_EuroLLM-9B-Instruct --tokenizer-dir EuroLLM-9B-Instruct \
+    --comp_unaware --input-jsonl imc_asr.jsonl
+```
+
+### Server mode (real-time from mic)
+
+```bash
+# Terminal 1 – Whisper server
+uv run simulstreaming-whisper-server --lan imc --task transcribe \
+    --model_path /path/to/your-imc-model.pt --port 43001
+
+# Terminal 2 – Translate server
+uv run simulstreaming-translate-server --src-lan imc --tgt-lan en \
+    --model-dir ct2_EuroLLM-9B-Instruct --tokenizer-dir EuroLLM-9B-Instruct \
+    --port 43002
+
+# Terminal 3 – stream mic audio (Linux)
+arecord -f S16_LE -c1 -r 16000 -t raw -D default \
+    | nc localhost 43001 | nc localhost 43002
+```
+
+### Using `imc` as a translation target
+
+`imc` is also registered as a valid `--tgt-lan` code, so if you have an LLM that generates Morse output:
+
+```bash
+uv run simulstreaming-translate --src-lan en --tgt-lan imc \
+    --model-dir /path/to/your-imc-llm ...
+```
+
 # SimulStreaming
 
 SimulStreaming is a tool for simultaneous (aka streaming) processing of speech-to-text and LLM translation models. 

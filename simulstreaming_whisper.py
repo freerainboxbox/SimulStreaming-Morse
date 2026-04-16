@@ -254,7 +254,10 @@ class SimulWhisperOnline(OnlineProcessorInterface):
         return o
     
 
-if __name__ == "__main__":
-
+def main():
     from simulstreaming.whisper.whisper_streaming.whisper_online_main import main_simulation_from_file
     main_simulation_from_file(simul_asr_factory, add_args=simulwhisper_args)
+
+
+if __name__ == "__main__":
+    main()
